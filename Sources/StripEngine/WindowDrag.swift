@@ -227,7 +227,10 @@ public final class WindowDragger {
     /// gone before another display takes it.
     private func finish(_ s: Session) {
         let sourceID = displays.id(of: s.source)
-        let order = s.involved.filter { $0 == sourceID } + s.involved.filter { $0 != sourceID }
+        // An array keeps `+` unambiguous here; the set's order does not matter, the source
+        // display only has to come first.
+        let involved = Array(s.involved)
+        let order = involved.filter { $0 == sourceID } + involved.filter { $0 != sourceID }
         for id in order {
             displays.engines[id]?.endDrag(from: s.picture)
         }

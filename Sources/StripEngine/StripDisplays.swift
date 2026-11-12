@@ -62,7 +62,7 @@ public final class StripDisplays {
     /// kept, and its windows go back to it when it returns.
     public func update(_ displays: [TiledDisplay]) {
         Log.note("display", "update: " + displays.map { "\(Self.short($0.id)) \(Log.rect($0.visible))" }.joined(separator: ", ")
-            + (disabled.isEmpty ? "" : "; disabled " + disabled.map(Self.short).joined(separator: ", ")))
+            + (disabled.isEmpty ? "" : "; disabled " + disabled.map { Self.short($0) }.joined(separator: ", ")))
         infos = displays
         var orphans: [StripEngine.Released] = []
         for id in engines.keys where !displays.contains(where: { $0.id == id }) || disabled.contains(id) {

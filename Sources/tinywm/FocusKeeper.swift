@@ -72,7 +72,7 @@ final class FocusKeeper {
     }
 
     private func inputAges(pid: pid_t) -> InputAges {
-        let since = Self.since
+        let since: ([CGEventType]) -> Double = { Self.since($0) }
         // Releasing ⌘ ends a ⌘-Tab, so modifier changes count as key presses.
         return InputAges(
             mouseDown: since([.leftMouseDown, .rightMouseDown]),

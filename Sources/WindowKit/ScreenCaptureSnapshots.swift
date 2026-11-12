@@ -1,7 +1,8 @@
 import AppKit
 import CoreImage
-import CoreMedia
-import ScreenCaptureKit
+@preconcurrency import CoreMedia
+// ScreenCaptureKit predates strict concurrency: its types are not declared Sendable.
+@preconcurrency import ScreenCaptureKit
 import WindowCore
 
 /// A captured frame. The pixel buffer is not written again while we hold it, so passing it

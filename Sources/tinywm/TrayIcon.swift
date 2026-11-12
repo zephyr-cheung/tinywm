@@ -5,7 +5,7 @@ import AppKit
 ///
 /// It is a template image, so macOS tints it for light and dark menu bars and when highlighted.
 enum TrayIcon {
-    static let image: NSImage = {
+    @MainActor static let image: NSImage = {
         let size = NSSize(width: 22, height: 16)
         let image = NSImage(size: size, flipped: false) { _ in
             let ink = NSColor.black

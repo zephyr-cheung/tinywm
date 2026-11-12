@@ -23,7 +23,7 @@ final class CoverArt {
         if let known = apps[pid] { return known }
         let app = NSRunningApplication(processIdentifier: pid)
         let icon = app?.icon
-        let info = App(icon: icon, colour: icon.flatMap(Self.averageColour), name: app?.localizedName)
+        let info = App(icon: icon, colour: icon.flatMap { Self.averageColour($0) }, name: app?.localizedName)
         apps[pid] = info
         return info
     }
