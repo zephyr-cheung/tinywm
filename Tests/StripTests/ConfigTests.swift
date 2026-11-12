@@ -355,3 +355,50 @@ private func key(_ name: String, shift: Bool = false, alt: Bool = false, control
         #expect(StripConfig.describe(key("a", shift: true), meta: .option) == "shift+a")
     }
 }
+
+@Suite struct FocusBorderColourTests {
+    @Test func hexColoursRead() {
+        #expect(RGBA(hex: "#16FFFA") == RGBA(r: 22 / 255, g: 1, b: 250 / 255))
+        #expect(RGBA(hex: "16fffa") == RGBA(hex: "#16FFFA"))
+        #expect(RGBA(hex: "#0F0") == RGBA(r: 0, g: 1, b: 0))
+        #expect(RGBA(hex: "#FF000080")?.a == 128.0 / 255)
+        #expect(RGBA(hex: "#12345") == nil)
+        #expect(RGBA(hex: "cyan") == nil)
+        #expect(RGBA(hex: "#GGGGGG") == nil)
+    }
+
+    @Test func aColourWritesBackAsHex() {
+        #expect(RGBA(r: 1, g: 0, b: 0x5F / 255).hex == "#FF005F")
+        #expect(RGBA(r: 0, g: 0, b: 0, a: 0.5).hex == "#00000080")
+    }
+
+    @Test func theConfigTakesAColour() {
+        let r = StripConfig.parse("focus-border-color = #FF5F00")
+        #expect(r.issues.isEmpty)
+        #expect(r.config.focusBorderColor == RGBA(hex: "#FF5F00"))
+        #expect(r.config.focusBorderColor.hex == "#FF5F00")
+    }
+
+    @Test func aCommentAfterAColourStillWorks() {
+        let r = StripConfig.parse("""
+        focus-border-color = #FF5F00    # warm orange
+        bind focus-left = a             # ⌥A
+        gap = 10 # the space between windows
+        """)
+        #expect(r.issues.isEmpty)
+        #expect(r.config.focusBorderColor == RGBA(hex: "#FF5F00"))
+        #expect(r.config.bindings["focus-left"] == key("a"))
+        #expect(r.config.gap == 10)
+    }
+
+    @Test func aColourThatCannotBeReadIsReported() {
+        let r = StripConfig.parse("focus-border-color = cyan")
+        #expect(r.issues.count == 1)
+        #expect(r.config.focusBorderColor.hex == "#16FFFA")
+    }
+
+    @Test func theDefaultBorderColourIsTheShippedCyan() {
+        #expect(StripConfig().focusBorderColor.hex == "#16FFFA")
+        #expect(StripConfig.parse(StripConfig.defaultLines.joined(separator: "\n")).issues.isEmpty)
+    }
+}

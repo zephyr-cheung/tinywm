@@ -126,6 +126,7 @@ final class Runtime {
         menu.showIssues(first.issues)
         configFile.onChange = { [unowned self] in applyConfig($0) }
         highlight.showBorder = config.focusBorder
+        applyFocusColour()
         swipeEnabled = config.swipe
         recognizer.fingers = config.swipeFingers
         refreshSwipeWarning()
@@ -186,12 +187,21 @@ final class Runtime {
             if settings != engine.settings { engine.settings = settings }
         }
         highlight.showBorder = config.focusBorder
+        applyFocusColour()
         swipeEnabled = config.swipe
         recognizer.fingers = config.swipeFingers
         refreshSwipeWarning()
         overview.keys = OverviewKeys(bindings: config.bindings)
         showShortcuts()
         lifecycle.applyRules()
+    }
+
+    /// The focus border, the overview and the motion pictures in the colour the config asks for.
+    private func applyFocusColour() {
+        let c = config.focusBorderColor
+        highlight.style.color = NSColor(srgbRed: c.r, green: c.g, blue: c.b, alpha: c.a)
+        overview.ringStyle = highlight.style
+        for ui in overlays.values { ui.pictures.ringStyle = highlight.style }
     }
 
     private func showShortcuts() {

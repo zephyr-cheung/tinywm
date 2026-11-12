@@ -1,4 +1,5 @@
 import Foundation
+import WindowCore
 
 public struct ConfigIssue: Equatable, Sendable, CustomStringConvertible {
     /// The file's line, or 0 for an issue with the whole file.
@@ -14,6 +15,9 @@ public struct StripConfig: Equatable, Sendable {
     public var defaultWidth = StripSettings().defaultWidth
     public var widthPresets = [0.333, 0.5, 0.667]
     public var focusBorder = true
+    /// The colour of the focus border, in sRGB. The shipped cyan is #16FFFA, written as exact
+    /// bytes so a template written from the defaults reads back unchanged.
+    public var focusBorderColor = RGBA(r: 22.0 / 255, g: 1, b: 250.0 / 255)
     /// Trackpad swipes on or off, and how many fingers they use.
     public var swipe = true
     public var swipeFingers = 3
@@ -157,9 +161,24 @@ public struct StripConfig: Equatable, Sendable {
         return issues
     }
 
+    /// The line up to its comment. A `#` after a space starts one, except right after `=`, where
+    /// it opens a colour such as `focus-border-color = #16FFFA`.
+    private static func uncommented(_ raw: String) -> Substring {
+        let s = Substring(raw)
+        var i = s.startIndex
+        while i < s.endIndex {
+            guard s[i] == "#" else { i = s.index(after: i); continue }
+            let before = s[..<i]
+            if before.allSatisfy(\.isWhitespace) { return before }
+            let afterSpace = i > s.startIndex && s[s.index(before: i)].isWhitespace
+            if afterSpace, !before.trimmingCharacters(in: .whitespaces).hasSuffix("=") { return before }
+            i = s.index(after: i)
+        }
+        return s
+    }
+
     private static func statement(_ raw: String) throws -> Statement? {
-        var s = Substring(raw)
-        if let hash = s.firstIndex(of: "#") { s = s[..<hash] }
+        let s = uncommented(raw)
         let line = s.trimmingCharacters(in: .whitespacesAndNewlines)
         if line.isEmpty { return nil }
         let first = line.split(whereSeparator: \.isWhitespace).first.map { $0.lowercased() } ?? ""
@@ -216,6 +235,11 @@ public struct StripConfig: Equatable, Sendable {
             config.widthPresets = try parts.map { try number($0.trimmingCharacters(in: .whitespaces), in: 0.05...1, for: name) }
         case "focus-border":
             config.focusBorder = try onOff(value, for: name)
+        case "focus-border-color":
+            guard let colour = RGBA(hex: value) else {
+                throw Failure(message: "focus-border-color must be a hex colour such as #16FFFA, not '\(value)'")
+            }
+            config.focusBorderColor = colour
         case "swipe":
             config.swipe = try onOff(value, for: name)
         case "focus-crosses-displays":
@@ -337,6 +361,7 @@ public struct StripConfig: Equatable, Sendable {
             "default-width = \(format(d.defaultWidth))",
             "width-presets = \(d.widthPresets.map(format).joined(separator: ", "))",
             "focus-border = on",
+            "focus-border-color = \(d.focusBorderColor.hex)",
             "swipe = on",
             "swipe-fingers = \(d.swipeFingers)",
             "focus-crosses-displays = off",
@@ -358,6 +383,8 @@ public struct StripConfig: Equatable, Sendable {
         # down pageup pagedown esc tab return space, and = - [ ] , . / ; ' or the names
         # equal minus leftbracket rightbracket comma period slash semicolon quote.
         # "unbind <action>" removes a default binding. Two actions on one key: the later line wins.
+        #
+        # focus-border-color takes #RGB, #RRGGBB or #RRGGBBAA; the border is on by default.
         #
         # Your own shortcuts. "run" starts a shell command; "send" presses other keys, with any of
         # cmd, shift, option and ctrl. They take the key from a default binding the same way.

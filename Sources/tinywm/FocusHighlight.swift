@@ -14,7 +14,8 @@ final class FocusHighlight {
         var color = NSColor(srgbRed: 0.085, green: 1.0, blue: 0.979, alpha: 1)
     }
 
-    var style = Style()
+    /// A changed colour or width redraws the border on the next refresh.
+    var style = Style() { didSet { drawn = nil; refresh() } }
     var showBorder = true { didSet { refresh() } }
 
     private let windows: AXWindows

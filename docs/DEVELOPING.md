@@ -102,6 +102,7 @@ gap = 8
 default-width = 0.333
 width-presets = 0.333, 0.5, 0.667
 focus-border = on
+focus-border-color = #16FFFA    # #RGB, #RRGGBB or #RRGGBBAA
 swipe = on          # trackpad swipes on or off
 swipe-fingers = 3   # 3 or 4
 restore-layout = on # save the layout and restore it at start
