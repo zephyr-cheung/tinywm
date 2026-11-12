@@ -1,4 +1,5 @@
 import Foundation
+import StripModel
 import WindowCore
 
 public struct ConfigIssue: Equatable, Sendable, CustomStringConvertible {
@@ -14,6 +15,8 @@ public struct StripConfig: Equatable, Sendable {
     public var gap = 8.0
     public var defaultWidth = StripSettings().defaultWidth
     public var widthPresets = [0.333, 0.5, 0.667]
+    /// How far the strip scrolls when focus moves: enough to show the focused column, or centred.
+    public var scrollMode = ScrollMode.fit
     public var focusBorder = true
     /// The colour of the focus border, in sRGB. The shipped cyan is #16FFFA, written as exact
     /// bytes so a template written from the defaults reads back unchanged.
@@ -44,6 +47,7 @@ public struct StripConfig: Equatable, Sendable {
         s.gap = gap
         s.defaultWidth = defaultWidth
         s.widthPresets = widthPresets
+        s.scrollMode = scrollMode
         return s
     }
 
@@ -233,6 +237,11 @@ public struct StripConfig: Equatable, Sendable {
         case "width-presets":
             let parts = value.split(separator: ",", omittingEmptySubsequences: false)
             config.widthPresets = try parts.map { try number($0.trimmingCharacters(in: .whitespaces), in: 0.05...1, for: name) }
+        case "scroll-mode":
+            guard let mode = ScrollMode(rawValue: value.lowercased()) else {
+                throw Failure(message: "scroll-mode must be fit or center, not '\(value)'")
+            }
+            config.scrollMode = mode
         case "focus-border":
             config.focusBorder = try onOff(value, for: name)
         case "focus-border-color":
@@ -360,6 +369,7 @@ public struct StripConfig: Equatable, Sendable {
             "gap = \(format(d.gap))",
             "default-width = \(format(d.defaultWidth))",
             "width-presets = \(d.widthPresets.map(format).joined(separator: ", "))",
+            "scroll-mode = \(d.scrollMode.rawValue)",
             "focus-border = on",
             "focus-border-color = \(d.focusBorderColor.hex)",
             "swipe = on",
@@ -384,6 +394,8 @@ public struct StripConfig: Equatable, Sendable {
         # equal minus leftbracket rightbracket comma period slash semicolon quote.
         # "unbind <action>" removes a default binding. Two actions on one key: the later line wins.
         #
+        # scroll-mode = center scrolls the focused column to the middle of the screen; fit scrolls
+        # only as far as needed to show it whole.
         # focus-border-color takes #RGB, #RRGGBB or #RRGGBBAA; the border is on by default.
         #
         # Your own shortcuts. "run" starts a shell command; "send" presses other keys, with any of

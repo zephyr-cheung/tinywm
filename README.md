@@ -100,6 +100,7 @@ Choose **Edit Config…** from the menu bar icon. A few lines go a long way:
 default-width = 0.5            # new windows take half the screen
 bind focus-left = n            # remap any key
 focus-border-color = #FF5F00   # the outline on the focused window, in sRGB
+scroll-mode = center           # keep the focused column in the middle of the screen
 
 float    = com.apple.calculator, System Settings
 ignore   = com.apple.finder
@@ -113,7 +114,9 @@ open-on  = Mail -> workspace 2  # an app always opens on a chosen display or wor
 
 There is more: `meta = control-option` picks ⌃⌥ as the meta key, `meta = option` picks ⌥,
 `focus-border-color` takes `#RGB`, `#RRGGBB` or `#RRGGBBAA` (`focus-border = off` hides the
-border altogether), `gap` sets the space between windows, `width-presets` sets the widths R
+border altogether), `scroll-mode = center` keeps the focused column in the middle of the screen
+where `fit`, the default, scrolls only as far as needed to show it whole, `gap` sets the space
+between windows, `width-presets` sets the widths R
 cycles through, `swipe-fingers = 4` switches swipes to four fingers, and `unbind` removes a
 default key. The config file that tinywm creates lists every option with a short explanation.
 

@@ -101,6 +101,7 @@ meta = right-command            # or control-option, or option
 gap = 8
 default-width = 0.333
 width-presets = 0.333, 0.5, 0.667
+scroll-mode = fit               # fit: scroll just enough; center: keep the focused column centred
 focus-border = on
 focus-border-color = #16FFFA    # #RGB, #RRGGBB or #RRGGBBAA
 swipe = on          # trackpad swipes on or off

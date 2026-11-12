@@ -402,3 +402,30 @@ private func key(_ name: String, shift: Bool = false, alt: Bool = false, control
         #expect(StripConfig.parse(StripConfig.defaultLines.joined(separator: "\n")).issues.isEmpty)
     }
 }
+
+@Suite struct ScrollModeConfigTests {
+    @Test func theShippedDefaultScrollsOnlyAsFarAsNeeded() {
+        #expect(StripConfig().scrollMode == .fit)
+        #expect(StripConfig.parse("").config.scrollMode == .fit)
+    }
+
+    @Test func scrollModeTakesFitOrCenter() {
+        let centred = StripConfig.parse("scroll-mode = center")
+        #expect(centred.issues.isEmpty)
+        #expect(centred.config.scrollMode == .center)
+        #expect(centred.config.applied(to: StripSettings()).scrollMode == .center)
+        #expect(StripConfig.parse("scroll-mode = FIT").config.scrollMode == .fit)
+    }
+
+    @Test func aModeThatCannotBeReadIsReported() {
+        let bad = StripConfig.parse("scroll-mode = middle")
+        #expect(bad.issues.count == 1)
+        #expect(bad.config.scrollMode == .fit)
+    }
+
+    @Test func theTemplateCarriesTheMode() {
+        let r = StripConfig.parse(StripConfig.defaultLines.joined(separator: "\n"))
+        #expect(r.issues.isEmpty)
+        #expect(r.config.scrollMode == .fit)
+    }
+}
