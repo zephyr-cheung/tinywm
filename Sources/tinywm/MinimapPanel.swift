@@ -3,7 +3,7 @@ import StripEngine
 import StripModel
 import WindowCore
 
-/// Shows the strip at the bottom of the screen while things move, then fades away.
+/// Shows the strip at the bottom, middle or top of the screen while things move, then fades away.
 @MainActor
 final class MinimapPanel {
     private let panel: NSPanel
@@ -17,6 +17,8 @@ final class MinimapPanel {
     var icon: (String) -> NSImage? = { _ in nil }
     /// The screen the minimap appears on.
     var screen: () -> NSScreen? = { NSScreen.main }
+    /// Where on that screen it sits, from `minimap-position` in the config.
+    var position = MinimapPosition.bottom
 
     init() {
         panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
@@ -43,7 +45,14 @@ final class MinimapPanel {
         let size = NSSize(width: CGFloat(worldW) * scale + padding * 2,
                           height: CGFloat(rows.count) * h + CGFloat(rows.count - 1) * rowSpacing + padding * 2)
         let f = screen.visibleFrame
-        panel.setFrame(NSRect(x: f.midX - size.width / 2, y: f.minY + 24, width: size.width, height: size.height), display: false)
+        // 24 points clear of the Dock or the menu bar, or dead centre for middle.
+        let y: CGFloat
+        switch position {
+        case .bottom: y = f.minY + 24
+        case .middle: y = f.midY - size.height / 2
+        case .top: y = f.maxY - size.height - 24
+        }
+        panel.setFrame(NSRect(x: f.midX - size.width / 2, y: y, width: size.width, height: size.height), display: false)
 
         // The outline glides only while the minimap is already showing; a fresh one starts in place.
         let visible = panel.isVisible && panel.alphaValue > 0

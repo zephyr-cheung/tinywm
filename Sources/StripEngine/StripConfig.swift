@@ -17,6 +17,8 @@ public struct StripConfig: Equatable, Sendable {
     public var widthPresets = [0.333, 0.5, 0.667]
     /// How far the strip scrolls when focus moves: enough to show the focused column, or centred.
     public var scrollMode = ScrollMode.fit
+    /// Where the minimap of the strip appears on screen.
+    public var minimapPosition = MinimapPosition.bottom
     public var focusBorder = true
     /// The colour of the focus border, in sRGB. The shipped cyan is #16FFFA, written as exact
     /// bytes so a template written from the defaults reads back unchanged.
@@ -237,6 +239,11 @@ public struct StripConfig: Equatable, Sendable {
         case "width-presets":
             let parts = value.split(separator: ",", omittingEmptySubsequences: false)
             config.widthPresets = try parts.map { try number($0.trimmingCharacters(in: .whitespaces), in: 0.05...1, for: name) }
+        case "minimap-position":
+            guard let position = MinimapPosition(rawValue: value.lowercased()) else {
+                throw Failure(message: "minimap-position must be bottom, middle or top, not '\(value)'")
+            }
+            config.minimapPosition = position
         case "scroll-mode":
             guard let mode = ScrollMode(rawValue: value.lowercased()) else {
                 throw Failure(message: "scroll-mode must be fit or center, not '\(value)'")
@@ -370,6 +377,7 @@ public struct StripConfig: Equatable, Sendable {
             "default-width = \(format(d.defaultWidth))",
             "width-presets = \(d.widthPresets.map(format).joined(separator: ", "))",
             "scroll-mode = \(d.scrollMode.rawValue)",
+            "minimap-position = \(d.minimapPosition.rawValue)",
             "focus-border = on",
             "focus-border-color = \(d.focusBorderColor.hex)",
             "swipe = on",
@@ -396,6 +404,8 @@ public struct StripConfig: Equatable, Sendable {
         #
         # scroll-mode = center scrolls the focused column to the middle of the screen; fit scrolls
         # only as far as needed to show it whole.
+        # minimap-position places the strip minimap that fades in while things move: bottom,
+        # middle or top.
         # focus-border-color takes #RGB, #RRGGBB or #RRGGBBAA; the border is on by default.
         #
         # Your own shortcuts. "run" starts a shell command; "send" presses other keys, with any of

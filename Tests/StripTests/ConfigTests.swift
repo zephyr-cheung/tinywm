@@ -429,3 +429,29 @@ private func key(_ name: String, shift: Bool = false, alt: Bool = false, control
         #expect(r.config.scrollMode == .fit)
     }
 }
+
+@Suite struct MinimapPositionConfigTests {
+    @Test func theShippedPlaceIsTheBottom() {
+        #expect(StripConfig().minimapPosition == .bottom)
+        #expect(StripConfig.parse("").config.minimapPosition == .bottom)
+    }
+
+    @Test func theThreePlacesRead() {
+        #expect(StripConfig.parse("minimap-position = top").config.minimapPosition == .top)
+        #expect(StripConfig.parse("minimap-position = middle").config.minimapPosition == .middle)
+        #expect(StripConfig.parse("minimap-position = bottom").config.minimapPosition == .bottom)
+        #expect(StripConfig.parse("minimap-position = TOP").config.minimapPosition == .top)
+    }
+
+    @Test func aPlaceThatCannotBeReadIsReported() {
+        let bad = StripConfig.parse("minimap-position = left")
+        #expect(bad.issues.count == 1)
+        #expect(bad.config.minimapPosition == .bottom)
+    }
+
+    @Test func theTemplateCarriesThePlace() {
+        let r = StripConfig.parse(StripConfig.defaultLines.joined(separator: "\n"))
+        #expect(r.issues.isEmpty)
+        #expect(r.config.minimapPosition == .bottom)
+    }
+}

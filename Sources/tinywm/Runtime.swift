@@ -127,6 +127,7 @@ final class Runtime {
         configFile.onChange = { [unowned self] in applyConfig($0) }
         highlight.showBorder = config.focusBorder
         applyFocusColour()
+        applyMinimapPosition()
         swipeEnabled = config.swipe
         recognizer.fingers = config.swipeFingers
         refreshSwipeWarning()
@@ -188,12 +189,18 @@ final class Runtime {
         }
         highlight.showBorder = config.focusBorder
         applyFocusColour()
+        applyMinimapPosition()
         swipeEnabled = config.swipe
         recognizer.fingers = config.swipeFingers
         refreshSwipeWarning()
         overview.keys = OverviewKeys(bindings: config.bindings)
         showShortcuts()
         lifecycle.applyRules()
+    }
+
+    /// The strip minimap where the config asks for it.
+    private func applyMinimapPosition() {
+        for ui in overlays.values { ui.minimap.position = config.minimapPosition }
     }
 
     /// The focus border, the overview and the motion pictures in the colour the config asks for.
@@ -351,6 +358,7 @@ final class Runtime {
         }
         let minimap = MinimapPanel()
         minimap.screen = screen
+        minimap.position = config.minimapPosition
         minimap.icon = { [unowned self] wid in
             guard let pid = windows.pid(of: wid) else { return nil }
             if let cached = icons[pid] { return cached }
