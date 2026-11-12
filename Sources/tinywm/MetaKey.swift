@@ -4,12 +4,13 @@ import StripEngine
 import WindowCore
 import WindowKit
 
-/// Makes right ⌘ a dedicated meta key.
+/// Makes a modifier tinywm's meta key: right ⌘, or ⌥ alone.
 ///
 /// macOS and apps treat both ⌘ keys alike, but raw key events carry a per-side bit. An event tap
 /// reads it: while right ⌘ is held, every key goes to tinywm and none reaches the app in front.
-/// Left ⌘ keeps working as usual. Secure input (password fields) pauses event taps, so tinywm
-/// keys do nothing there.
+/// Left ⌘ keeps working as usual. With ⌥ as the meta key the tap takes only the keys tinywm has a
+/// shortcut for, so ⌥← and ⌥⌫ still reach the app (see `handle`). Secure input (password fields)
+/// pauses event taps, so tinywm keys do nothing there.
 ///
 /// The same tap reads the left mouse button for meta + drag, with either meta key. A press with
 /// the meta key held on a managed window, and the rest of that click, never reach the app.
@@ -23,6 +24,8 @@ final class MetaKey {
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
     private var rightCommandDown = false
+    /// Keys the ⌥ meta took, so their release is taken too rather than arriving without a press.
+    private var optionTook: Set<Int> = []
     /// The last key pressed anywhere, so a launcher closed with Esc can be told from one that
     /// opened an app.
     private(set) var lastKeyDown: (code: Int, at: Date)?
@@ -51,11 +54,12 @@ final class MetaKey {
         onChange()
     }
 
-    /// Right ⌘ mode reads keys through the tap and switches the ⌃⌥ system hotkeys off. The tap
-    /// runs in both modes, since it also reads the mouse.
+    /// Right ⌘ and ⌥ modes read keys through the tap and switch the ⌃⌥ system hotkeys off, so the
+    /// same shortcut never runs twice and ⌃⌥ keeps working for apps. The tap runs in every mode,
+    /// since it also reads the mouse.
     private func apply() {
         rebuild()
-        ShortcutRegistry.shared.setSuspended(mode == .rightCommand)
+        ShortcutRegistry.shared.setSuspended(mode.readsKeysThroughTheTap)
         installTap()
     }
 
@@ -63,7 +67,7 @@ final class MetaKey {
         let registry = ShortcutRegistry.shared
         bindings = MetaKeyBindings(registry.entries.compactMap { e in
             registry.shortcut(for: e.action).map { (e.action, $0.keyCode, $0.modifiers) }
-        })
+        }, mode: mode)
     }
 
     /// The action of each chord, run through the registry so rebinding keeps working.
@@ -124,21 +128,38 @@ final class MetaKey {
             return true
         case .keyDown, .keyUp:
             if type == .keyDown { lastKeyDown = (e.keyCode, Date()) }
-            guard mode == .rightCommand, rightCommandDown else { return false }
-            if type == .keyDown {
-                let flags = CGEventFlags(rawValue: e.flags)
-                if let action = bindings.action(keyCode: e.keyCode, shift: flags.contains(.maskShift),
-                                                option: flags.contains(.maskAlternate),
-                                                control: flags.contains(.maskControl)),
-                   !e.isRepeat || StripActions.spec(named: action)?.repeats == true {
-                    run(action)
-                }
+            switch mode {
+            case .controlOption:
+                // System hotkeys take these keys; the tap only reads the mouse.
+                return false
+            case .rightCommand:
+                guard rightCommandDown else { return false }
+                if type == .keyDown { press(e) }
+                // Dedicated key: nothing typed with right ⌘ reaches the app in front.
+                return true
+            case .option:
+                // ⌥ is an ordinary modifier apps need for ⌥←, ⌥⌫ and ⌥-click, so only the keys
+                // tinywm has a shortcut for are taken; everything else goes on to the app.
+                // A taken key's release is taken too, even if ⌥ came up first.
+                if type == .keyUp, optionTook.remove(e.keyCode) != nil { return true }
+                guard type == .keyDown, mode.isHeld(flags: e.flags), press(e) else { return false }
+                optionTook.insert(e.keyCode)
+                return true
             }
-            // Dedicated key: nothing typed with right ⌘ reaches the app in front.
-            return true
         default:
             return false
         }
+    }
+
+    /// Runs the action bound to a press with the meta key held, and says whether a key was bound.
+    @discardableResult
+    private func press(_ e: KeyEvent) -> Bool {
+        let flags = CGEventFlags(rawValue: e.flags)
+        guard let action = bindings.action(keyCode: e.keyCode, shift: flags.contains(.maskShift),
+                                          option: flags.contains(.maskAlternate),
+                                          control: flags.contains(.maskControl)) else { return false }
+        if !e.isRepeat || StripActions.spec(named: action)?.repeats == true { run(action) }
+        return true
     }
 
     /// Left-button events, which pass straight through unless a meta drag owns the click.

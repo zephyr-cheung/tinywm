@@ -303,3 +303,55 @@ private func key(_ name: String, shift: Bool = false, alt: Bool = false, control
         #expect(StripConfig.read(.success(Data("gap 30".utf8)), previous: StripConfig.parse("")) == StripConfig.parse("gap 30"))
     }
 }
+
+@Suite struct OptionMetaConfigTests {
+    @Test func metaOptionParsesAndTheBackupKeySetLoads() {
+        let r = StripConfig.parse("""
+        meta = option
+        gap = 8
+        bind focus-left = a
+        bind focus-right = d
+        bind move-left = shift+a
+        bind float = shift+space
+        bind wider = equal
+        bind stack-right = ]
+        unbind display-left
+        """)
+        #expect(r.issues.isEmpty)
+        #expect(r.config.meta == .option)
+        #expect(r.config.bindings["focus-left"] == key("a"))
+        #expect(r.config.bindings["focus-right"] == key("d"))
+        #expect(r.config.bindings["move-left"] == key("a", shift: true))
+        #expect(r.config.bindings["float"] == key("space", shift: true))
+        #expect(r.config.bindings["wider"] == key("equal"))
+        #expect(r.config.bindings["stack-right"] == key("rightbracket"))
+        #expect(r.config.bindings["display-left"] == nil)
+    }
+
+    @Test func onlyShiftCanJoinOption() {
+        let r = StripConfig.parse("""
+        meta = option
+        bind float = control+space
+        bind center = command+c
+        bind wider = option+equal
+        bind narrower = shift+minus
+        """)
+        #expect(r.issues.map(\.line) == [2, 3, 4])
+        #expect(r.config.bindings["float"] == key("t"))
+        #expect(r.config.bindings["center"] == key("c"))
+        #expect(r.config.bindings["wider"] == key("equal"))
+        #expect(r.config.bindings["narrower"] == key("minus", shift: true))
+    }
+
+    @Test func theMetaLineAppliesToBindingsBeforeIt() {
+        let r = StripConfig.parse("bind float = command+f\nmeta = option")
+        #expect(r.issues.count == 1)
+        #expect(r.config.meta == .option)
+        #expect(r.config.bindings["float"] == key("t"))
+    }
+
+    @Test func describingAnOptionChordLeavesTheMetaKeyOut() {
+        #expect(StripConfig.describe(key("a"), meta: .option) == "a")
+        #expect(StripConfig.describe(key("a", shift: true), meta: .option) == "shift+a")
+    }
+}

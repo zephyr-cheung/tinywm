@@ -97,7 +97,7 @@ skipped, and **Config Errors** in the menu lists it with its line number.
 
 ```
 # comments and blank lines are ignored
-meta = right-command            # or control-option
+meta = right-command            # or control-option, or option
 gap = 8
 default-width = 0.333
 width-presets = 0.333, 0.5, 0.667
@@ -116,7 +116,8 @@ unbind focus-left-arrow         # removes a default binding
   semicolon quote`).
 - Extra modifiers: `shift`, `option` and `control`, joined with `+` (`shift+option+left`,
   `control+h`). With `meta = control-option` the extra modifier is `command` instead of
-  `option`, and `control` is not available, since ⌃ is already part of the meta key.
+  `option`, and `control` is not available, since ⌃ is already part of the meta key. With
+  `meta = option` only `shift` is available, since ⌥ is the meta key itself.
 - If two lines put actions on one key, the later line wins and the clash is reported. A line
   that takes the key of a shipped default unbinds that default without a report.
 - Action names are listed in the table below and in the template.
@@ -189,8 +190,8 @@ An `open-on` line has the patterns, then `->`, then `display <name>`, `workspace
 
 ## tinywm shortcuts
 
-The meta key is right ⌘ by default; set `meta = control-option` for ⌃⌥. Vim letters and arrow
-keys both work out of the box.
+The meta key is right ⌘ by default; set `meta = control-option` for ⌃⌥, or `meta = option` for
+⌥ alone. Vim letters and arrow keys both work out of the box.
 
 | Shortcut | Action | Config name |
 | --- | --- | --- |

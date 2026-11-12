@@ -79,8 +79,8 @@ public final class ShortcutRegistry {
         return entry.defaultShortcut
     }
 
-    /// Turns the Carbon hotkeys off or back on and keeps every registration. Right ⌘ mode reads
-    /// keys through its own event tap and turns them off.
+    /// Turns the Carbon hotkeys off or back on and keeps every registration. The right ⌘ and ⌥
+    /// modes read keys through their own event tap and turn them off.
     public func setSuspended(_ value: Bool) {
         guard suspended != value else { return }
         suspended = value

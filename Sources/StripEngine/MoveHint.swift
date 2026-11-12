@@ -4,7 +4,7 @@ public enum MoveHint {
     static let directions = ["left", "down", "up", "right"]
 
     public static func text(bindings: [String: MetaKeyBindings.Chord], meta: MetaModifier) -> String {
-        let held = meta == .rightCommand ? "the right ⌘ key" : "⌃⌥"
+        let held = heldName(meta)
         let groups = [keys(directions.map { "focus-\($0)" }, bindings, meta),
                       keys(directions.map { "focus-\($0)-arrow" }, bindings, meta)].compactMap { $0 }
         guard !groups.isEmpty else { return "Hold \(held) and press a focus key to move around. The config binds none yet." }
@@ -20,11 +20,24 @@ public enum MoveHint {
         return chords.map { key($0, meta) }.joined(separator: " ")
     }
 
+    /// How the meta key reads in that line.
+    private static func heldName(_ meta: MetaModifier) -> String {
+        switch meta {
+        case .rightCommand: return "the right ⌘ key"
+        case .controlOption: return "⌃⌥"
+        case .option: return "⌥"
+        }
+    }
+
     static func key(_ chord: MetaKeyBindings.Chord, _ meta: MetaModifier) -> String {
         var s = ""
-        if chord.control { s += "⌃" }
+        if chord.control, meta != .option { s += "⌃" }
         if chord.shift { s += "⇧" }
-        if chord.option { s += meta == .rightCommand ? "⌥" : "⌘" }
+        switch meta {
+        case .rightCommand: if chord.option { s += "⌥" }
+        case .controlOption: if chord.option { s += "⌘" }
+        case .option: break
+        }
         let name = KeyNames.name(of: chord.keyCode) ?? "key \(chord.keyCode)"
         let arrows = ["left": "←", "right": "→", "up": "↑", "down": "↓"]
         return s + (arrows[name] ?? (name.count == 1 ? name.uppercased() : name.capitalized))

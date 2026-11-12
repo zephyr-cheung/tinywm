@@ -43,3 +43,61 @@ import Testing
         #expect(!MetaModifier.controlOption.isHeld(flags: 0x40000))
     }
 }
+
+@Suite struct OptionMetaKeyTests {
+    let ctrlOpt = MetaKeyBindings.control | MetaKeyBindings.option
+    let a = 0, d = 2, space = 49, up = 126
+
+    @Test func optionShortcutsBecomeOptionChords() {
+        let b = MetaKeyBindings([
+            ("focus-left", a, ctrlOpt),
+            ("move-left", a, ctrlOpt | MetaKeyBindings.shift),
+        ], mode: .option)
+        #expect(b.action(keyCode: a, shift: false, option: true) == "focus-left")
+        #expect(b.action(keyCode: a, shift: true, option: true) == "move-left")
+        // The ⌥ in the event is the meta key itself, so the lookup never asks for an extra one.
+        #expect(b.action(keyCode: a, shift: false, option: false) == "focus-left")
+        #expect(b.action(keyCode: d, shift: false, option: true) == nil)
+    }
+
+    @Test func anExtraOptionBecomesTheMetaKeyItself() {
+        // The shipped arrow-key workspace shortcuts carry an extra ⌥, which ⌥ as the meta key
+        // already is: ⌥↑ stays ⌥↑.
+        let b = MetaKeyBindings([("workspace-up-arrow", up, ctrlOpt | MetaKeyBindings.command)], mode: .option)
+        #expect(b.action(keyCode: up, shift: false, option: true) == "workspace-up-arrow")
+        // ⇧ is still told apart.
+        let moved = MetaKeyBindings([("workspace-move-up-arrow", up, ctrlOpt | MetaKeyBindings.command | MetaKeyBindings.shift)],
+                                    mode: .option)
+        #expect(moved.action(keyCode: up, shift: true, option: true) == "workspace-move-up-arrow")
+        #expect(moved.action(keyCode: up, shift: false, option: true) == nil)
+    }
+
+    @Test func optionKeysWithoutTheBaseAreIgnored() {
+        let b = MetaKeyBindings([("plain", space, MetaKeyBindings.shift)], mode: .option)
+        #expect(b.actions.isEmpty)
+    }
+
+    @Test func menusShowOptionAlone() {
+        #expect(MetaKeyBindings.display(keyName: "A", modifiers: ctrlOpt, mode: .option) == "⌥A")
+        #expect(MetaKeyBindings.display(keyName: "A", modifiers: ctrlOpt | MetaKeyBindings.shift, mode: .option) == "⌥⇧A")
+        #expect(MetaKeyBindings.display(keyName: "↑", modifiers: ctrlOpt | MetaKeyBindings.command, mode: .option) == "⌥↑")
+    }
+
+    @Test func theOptionKeyIsReadFromEventFlags() {
+        let option: UInt64 = 0x80000, command: UInt64 = 0x100000
+        #expect(MetaModifier.option.isHeld(flags: option))
+        #expect(!MetaModifier.option.isHeld(flags: command))
+        #expect(MetaModifier.option.isHeld(flags: option | command))
+    }
+
+    @Test func optionModeReadsKeysThroughTheTap() {
+        #expect(MetaModifier.option.readsKeysThroughTheTap)
+        #expect(MetaModifier.rightCommand.readsKeysThroughTheTap)
+        #expect(!MetaModifier.controlOption.readsKeysThroughTheTap)
+    }
+
+    @Test func theMoveHintNamesTheOptionKey() {
+        #expect(MoveHint.text(bindings: StripActions.defaultBindings, meta: .option)
+            == "Hold ⌥ and press H J K L or the arrow keys to move around.")
+    }
+}

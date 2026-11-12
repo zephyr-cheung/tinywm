@@ -198,7 +198,8 @@ public struct StripConfig: Equatable, Sendable {
         switch value.lowercased() {
         case "right-command": return .rightCommand
         case "control-option": return .controlOption
-        default: throw Failure(message: "meta must be right-command or control-option, not '\(value)'")
+        case "option": return .option
+        default: throw Failure(message: "meta must be right-command, control-option or option, not '\(value)'")
         }
     }
 
@@ -239,7 +240,8 @@ public struct StripConfig: Equatable, Sendable {
     }
 
     /// `shift+option+key`. The fourth modifier is option with right ⌘ as meta and command with ⌃⌥.
-    /// Control is a further one with right ⌘; ⌃⌥ already holds it.
+    /// Control is a further one with right ⌘; ⌃⌥ already holds it. With ⌥ as the meta key only
+    /// shift can be added, since ⌥ itself is the meta key.
     private static func chord(_ text: String, meta: MetaModifier) throws -> MetaKeyBindings.Chord {
         let parts = text.split(separator: "+", omittingEmptySubsequences: false).map(String.init)
         guard let keyName = parts.last, !keyName.isEmpty else { throw Failure(message: "missing key in '\(text)'") }
@@ -255,13 +257,19 @@ public struct StripConfig: Equatable, Sendable {
                 control = true
             case ("control", .controlOption), ("ctrl", .controlOption):
                 throw Failure(message: "control is already part of control-option")
+            case ("control", .option), ("ctrl", .option):
+                throw Failure(message: "control is not available with meta = option; add shift only")
             case ("option", .rightCommand), ("command", .controlOption):
                 guard !alt else { throw Failure(message: "\(m) is given twice") }
                 alt = true
             case ("option", .controlOption):
                 throw Failure(message: "option is already part of control-option; use command for the extra modifier")
+            case ("option", .option):
+                throw Failure(message: "option is the meta key with meta = option; add shift only")
             case ("command", .rightCommand):
                 throw Failure(message: "command is not available with meta = right-command; use option")
+            case ("command", .option):
+                throw Failure(message: "command is not available with meta = option; add shift only")
             default:
                 throw Failure(message: "unknown modifier '\(m)'")
             }
@@ -290,9 +298,14 @@ public struct StripConfig: Equatable, Sendable {
     /// How a chord is written in the file, for the given meta key.
     public static func describe(_ chord: MetaKeyBindings.Chord, meta: MetaModifier) -> String {
         var parts: [String] = []
-        if chord.control { parts.append("control") }
+        // ⌥ as the meta key leaves no room for further modifiers, so the chord is ⇧ and the key.
+        if chord.control, meta != .option { parts.append("control") }
         if chord.shift { parts.append("shift") }
-        if chord.option { parts.append(meta == .rightCommand ? "option" : "command") }
+        switch meta {
+        case .rightCommand: if chord.option { parts.append("option") }
+        case .controlOption: if chord.option { parts.append("command") }
+        case .option: break
+        }
         parts.append(KeyNames.name(of: chord.keyCode) ?? "key\(chord.keyCode)")
         return parts.joined(separator: "+")
     }
@@ -338,8 +351,10 @@ public struct StripConfig: Equatable, Sendable {
         # tinywm config. Lines starting with # are ignored; the file reloads when you save it.
         # Only the lines you uncomment or add change anything; the rest keeps the default shown here.
         #
-        # The meta key is implied in every binding. Extra modifiers: shift, option and control
-        # (with meta = control-option, command instead of option, and no control). Keys: letters, digits, left right up
+        # The meta key is implied in every binding: right ⌘ by default; meta = control-option
+        # uses ⌃⌥, and meta = option uses ⌥ alone. Extra modifiers: shift, option and control
+        # (with meta = control-option, command instead of option, and no control; with
+        # meta = option, shift only). Keys: letters, digits, left right up
         # down pageup pagedown esc tab return space, and = - [ ] , . / ; ' or the names
         # equal minus leftbracket rightbracket comma period slash semicolon quote.
         # "unbind <action>" removes a default binding. Two actions on one key: the later line wins.

@@ -90,7 +90,7 @@ windows make room, and a slot shows exactly where it will land: between two colu
 below a window in a stack, or on another display. Let go to drop it there, or press Esc to
 cancel. A floating window simply moves.
 
-Prefer ⌃⌥ over right ⌘, or different keys? Change anything in the config.
+Prefer ⌃⌥ or plain ⌥ over right ⌘, or different keys? Change anything in the config.
 
 ## Make it yours
 
@@ -110,10 +110,36 @@ focus-crosses-displays = on     # past the last column, focus moves to the next 
 open-on  = Mail -> workspace 2  # an app always opens on a chosen display or workspace
 ```
 
-There is more: `meta = control-option` picks ⌃⌥ as the meta key, `gap` sets the space between
-windows, `width-presets` sets the widths R cycles through, `swipe-fingers = 4` switches swipes
-to four fingers, and `unbind` removes a default key. The config file that tinywm creates lists
-every option with a short explanation.
+There is more: `meta = control-option` picks ⌃⌥ as the meta key, `meta = option` picks ⌥,
+`gap` sets the space between windows, `width-presets` sets the widths R cycles through,
+`swipe-fingers = 4` switches swipes to four fingers, and `unbind` removes a default key. The
+config file that tinywm creates lists every option with a short explanation.
+
+### Plain ⌥ as the meta key
+
+`meta = option` makes ⌥ alone the meta key, for keys left over from PaperWM or a Linux desktop:
+
+```
+meta = option
+bind focus-left = a            # ⌥A
+bind move-left = shift+a       # ⌥⇧A
+bind float = shift+space       # ⌥⇧Space
+unbind display-left            # give back a default key you do not use
+```
+
+A few things follow from ⌥ being a key apps use:
+
+- Only `shift` can join ⌥ in a binding. `control`, `option` and `command` are refused with an
+  error, since ⌥ is the meta key itself.
+- tinywm takes the keys it has a shortcut for, so ⌥A, ⌥D and ⌥E no longer type `å`, `∂` or `´`.
+  Every other ⌥ combination, such as ⌥← or ⌥⌫, still reaches the app in front.
+- The shipped arrow-key defaults (⌥← ⌥→ for focus, ⌥↑ ⌥↓ for workspaces) would take ⌥← and ⌥→
+  from word-wise editing in text fields. `unbind focus-left-arrow` and its three siblings give
+  those back; `unbind workspace-up-arrow`, `unbind workspace-down-arrow` and their two `-move-`
+  siblings do the same for the up and down arrows.
+- ⌥-dragging a window works as it does with right ⌘, which also means a plain ⌥-click on a
+  managed window belongs to tinywm.
+- Password fields pause the meta key here too: use ⌃⌥ if you need tinywm while typing one.
 
 ## Good to know
 
