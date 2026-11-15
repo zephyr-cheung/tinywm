@@ -28,8 +28,17 @@ final class OverviewView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
-        let held = event.modifierFlags.intersection([.command, .control, .option])
-        guard held.isEmpty, let key = keys.command(keyCode: Int(event.keyCode), shift: event.modifierFlags.contains(.shift)) else { return }
+        let flags = event.modifierFlags
+        let held = flags.intersection([.command, .control, .option])
+        let keyCode = Int(event.keyCode)
+        // The meta key with W A S D steers the overview even where the strip has those keys
+        // doing something else.
+        if held == .option || held == [.option, .control] || held == .command,
+           let key = keys.metaCommand(keyCode: keyCode, option: held.contains(.option),
+                                      control: held.contains(.control), command: held.contains(.command)) {
+            return onKey(key)
+        }
+        guard held.isEmpty, let key = keys.command(keyCode: keyCode, shift: flags.contains(.shift)) else { return }
         onKey(key)
     }
 

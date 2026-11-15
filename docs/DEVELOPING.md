@@ -219,11 +219,14 @@ The meta key is right ⌘ by default; set `meta = control-option` for ⌃⌥, or
 | Meta + W / A / S / D | Focus the display above, left, below or right | `display-up` `display-left` `display-down` `display-right` |
 | Meta + ⇧ + W / A / S / D | Move the window to that display | `display-move-up` and so on |
 | Meta + Esc | Overview | `overview` |
+| In the overview: Meta + W A S D | Move the selection up, left, down, right | (the keys themselves) |
 | Meta + Q | Close the window | `close-window` |
 | Meta + left drag | Move the window with the mouse | none |
 
 In the overview, the focus keys (letters and arrows, with or without the meta key) move the
-selection, Tab and ⇧Tab step through windows, Return or Meta + Esc confirms, and Esc cancels.
+selection. Meta + W A S D always moves up, left, down or right, even where those keys do something
+else on the strip, so up and down work with only the focus letters bound. Tab and ⇧Tab step
+through windows, Return or Meta + Esc confirms, and Esc cancels.
 
 ## Dragging windows
 

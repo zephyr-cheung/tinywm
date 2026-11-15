@@ -81,7 +81,12 @@ final class ShortcutCommands {
         // key moves real windows.
         if overview.isOpen {
             Log.note("key", "\(name) in the overview")
-            if let command = OverviewKeys.command(forAction: name) { overview.handle(command) }
+            // The W A S D cross moves the selection whatever those keys do on the strip: ⌥W is
+            // "up" here, not "close the window".
+            let keyCode = registry.shortcut(for: name)?.keyCode
+            if let command = keyCode.flatMap(OverviewKeys.cross(forKeyCode:)) ?? OverviewKeys.command(forAction: name) {
+                overview.handle(command)
+            }
         } else if let engine = activeEngine {
             Log.note("key", "\(name) on \(engine.label); system focus \(windows.knownFocus.map(Log.name) ?? "none"), "
                 + "strip focus \(engine.strip.focusedWindow.map(Log.name) ?? "none")")

@@ -455,3 +455,42 @@ private func key(_ name: String, shift: Bool = false, alt: Bool = false, control
         #expect(r.config.minimapPosition == .bottom)
     }
 }
+
+@Suite struct OverviewCrossTests {
+    private let w = 13, a = 0, s = 1, d = 2, up = 126, left = 123
+
+    @Test func theMetaCrossMovesAllFourWays() {
+        let keys = OverviewKeys(meta: .option)
+        #expect(keys.metaCommand(keyCode: w, option: true, control: false, command: false) == .up)
+        #expect(keys.metaCommand(keyCode: s, option: true, control: false, command: false) == .down)
+        #expect(keys.metaCommand(keyCode: a, option: true, control: false, command: false) == .left)
+        #expect(keys.metaCommand(keyCode: d, option: true, control: false, command: false) == .right)
+        #expect(keys.metaCommand(keyCode: up, option: true, control: false, command: false) == .up)
+        #expect(keys.metaCommand(keyCode: left, option: true, control: false, command: false) == .left)
+    }
+
+    @Test func theCrossFollowsTheChosenMetaKey() {
+        let optionKeys = OverviewKeys(meta: .option)
+        #expect(optionKeys.metaCommand(keyCode: w, option: true, control: true, command: false) == nil)
+        #expect(optionKeys.metaCommand(keyCode: w, option: false, control: false, command: true) == nil)
+        let both = OverviewKeys(meta: .controlOption)
+        #expect(both.metaCommand(keyCode: w, option: true, control: true, command: false) == .up)
+        #expect(both.metaCommand(keyCode: w, option: true, control: false, command: false) == nil)
+        let command = OverviewKeys(meta: .rightCommand)
+        #expect(command.metaCommand(keyCode: d, option: false, control: false, command: true) == .right)
+    }
+
+    @Test func theCrossIgnoresKeysOutsideIt() {
+        #expect(OverviewKeys.cross(forKeyCode: 40) == nil)   // K
+        #expect(OverviewKeys.cross(forKeyCode: 13) == .up)   // W, whatever it does on the strip
+    }
+
+    @Test func plainKeysStayAsTheyWere() {
+        let keys = OverviewKeys(meta: .option)
+        #expect(keys.command(keyCode: 38, shift: false) == .down)   // J
+        #expect(keys.command(keyCode: 125, shift: false) == .down)  // ↓
+        #expect(keys.command(keyCode: 13, shift: false) == nil)     // plain W does nothing
+        #expect(keys.command(keyCode: 53, shift: false) == .cancel)
+        #expect(keys.command(keyCode: 36, shift: false) == .confirm)
+    }
+}

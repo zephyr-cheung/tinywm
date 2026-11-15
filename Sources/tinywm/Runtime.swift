@@ -131,7 +131,7 @@ final class Runtime {
         swipeEnabled = config.swipe
         recognizer.fingers = config.swipeFingers
         refreshSwipeWarning()
-        overview.keys = OverviewKeys(bindings: config.bindings)
+        overview.keys = OverviewKeys(bindings: config.bindings, meta: config.meta)
         displays.settings = config.applied(to: displays.settings)
         displays.update(Screens.infos())
         menu.showDisplays(disabled: displays.disabled)
@@ -193,7 +193,7 @@ final class Runtime {
         swipeEnabled = config.swipe
         recognizer.fingers = config.swipeFingers
         refreshSwipeWarning()
-        overview.keys = OverviewKeys(bindings: config.bindings)
+        overview.keys = OverviewKeys(bindings: config.bindings, meta: config.meta)
         showShortcuts()
         lifecycle.applyRules()
     }
