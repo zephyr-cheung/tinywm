@@ -80,6 +80,9 @@ final class MinimapPanel {
 }
 
 private final class MinimapView: NSView {
+    /// The cards are drawn once per layout change, in the view's own picture. The outline is a
+    /// layer of its own, so a sliding viewport moves without redrawing anything.
+    private let outlineLayer = CALayer()
     private var rows: [MinimapRow] = []
     private var scale: CGFloat = 1
     private var rowHeight: CGFloat = 0
@@ -98,6 +101,22 @@ private final class MinimapView: NSView {
 
     override var isFlipped: Bool { true }
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        guard let layer else { return }
+        outlineLayer.backgroundColor = nil
+        outlineLayer.borderColor = NSColor.white.withAlphaComponent(0.9).cgColor
+        outlineLayer.borderWidth = 2
+        outlineLayer.cornerRadius = 5
+        outlineLayer.isHidden = true
+        outlineLayer.contentsScale = window?.backingScaleFactor ?? 2
+        layer.addSublayer(outlineLayer)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("no nib") }
+
     func update(rows: [MinimapRow], scale: CGFloat, rowHeight: CGFloat, spacing: CGFloat, padding: CGFloat,
                 icon: @escaping (String) -> NSImage?, animate: Bool) {
         self.rows = rows; self.scale = scale; self.rowHeight = rowHeight
@@ -105,6 +124,7 @@ private final class MinimapView: NSView {
 
         guard let r = rows.firstIndex(where: { $0.isActive }), let v = rows[r].viewport else {
             outline = nil
+            outlineLayer.isHidden = true
             needsDisplay = true
             return
         }
@@ -123,8 +143,19 @@ private final class MinimapView: NSView {
         } else {
             outline = target
             outlineTo = target
+            placeOutline()
         }
         needsDisplay = true
+    }
+
+    /// Puts the outline layer where `outline` says, one line clear of the picture's edge.
+    private func placeOutline() {
+        guard let outline else { outlineLayer.isHidden = true; return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        outlineLayer.isHidden = false
+        outlineLayer.frame = outline.insetBy(dx: -1, dy: -1)
+        CATransaction.commit()
     }
 
     /// Advances the outline along a critically damped spring: x(t) = 1 - (1 + wt) e^(-wt).
@@ -142,20 +173,16 @@ private final class MinimapView: NSView {
                              width: outlineFrom.width + (outlineTo.width - outlineFrom.width) * f,
                              height: outlineFrom.height + (outlineTo.height - outlineFrom.height) * f)
         }
-        needsDisplay = true
+        placeOutline()
     }
 
     override func draw(_ dirty: NSRect) {
-        drawRows()
-        if let outline {
-            let path = NSBezierPath(roundedRect: outline.insetBy(dx: -1, dy: -1), xRadius: 5, yRadius: 5)
-            path.lineWidth = 2
-            NSColor.white.withAlphaComponent(0.9).setStroke()
-            path.stroke()
-        }
+        drawCards()
     }
 
-    private func drawRows() {
+    /// The panel's background and every window card. Only `update` asks for it, so the icons are
+    /// turned into pictures once per layout change rather than once per frame of a motion.
+    private func drawCards() {
         let bg = NSBezierPath(roundedRect: bounds, xRadius: 12, yRadius: 12)
         NSColor(white: 0.08, alpha: 0.82).setFill()
         bg.fill()
